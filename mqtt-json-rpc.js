@@ -270,7 +270,7 @@ const _buildError = (payload, error) => {
             rpcError = new JSONRPC.JsonRpcError("application error", error)
             break
         case "object":
-            if (!!error) {
+            if (error) {
                 if (error instanceof JSONRPC.JsonRpcError)
                     rpcError = error
                 else if (error instanceof Error)
