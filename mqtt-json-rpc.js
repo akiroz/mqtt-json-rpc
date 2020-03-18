@@ -186,16 +186,16 @@ class API {
         let request = JSONRPC.request(rid, method, params)
 
         /*  subscribe for response  */
-        this._responseSubscribe(method)
-
-        /*  send MQTT request message  */
-        request = this.encodr.encode(request)
-        this.mqtt.publish(`${method}/request`, request, { qos: 2 }, (err) => {
-            if (err) {
-                /*  handle request failure  */
-                this._responseUnsubscribe(method)
-                this.requests[rid](err, undefined)
-            }
+        this._responseSubscribe(method).then(() => {
+            /*  send MQTT request message  */
+            request = this.encodr.encode(request)
+            this.mqtt.publish(`${method}/request`, request, { qos: 2 }, (err) => {
+                if (err) {
+                    /*  handle request failure  */
+                    this._responseUnsubscribe(method)
+                    this.requests[rid](err, undefined)
+                }
+            })
         })
 
         return promise
@@ -238,11 +238,13 @@ class API {
     /*  subscribe to RPC response  */
     _responseSubscribe (method) {
         const topic = `${method}/response/${this.cid}`
+        let subscribePromise = Promise.resolve()
         if (this.subscriptions[topic] === undefined) {
             this.subscriptions[topic] = 0
-            this.mqtt.subscribe(topic, { qos: 2 })
+            subscribePromise = this.mqtt.subscribe(topic, { qos: 2 })
         }
         this.subscriptions[topic]++
+        return subscribePromise
     }
 
     /*  unsubscribe from RPC response  */
